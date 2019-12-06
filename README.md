@@ -23,6 +23,7 @@ And the project should be flashed to the board.
 
 To start working on the project after cloning create a new branch like this:
  ```
+  git checkout master
   git checkout -b task/name_of_task
  ```
 
