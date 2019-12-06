@@ -65,7 +65,7 @@ void app_main(void)
     while (!wifi_is_connected())
         ;
 
-    http_get_url("http://potrage.gss.hr/oaplikaciji.php", http_event_handler);
+    http_get_url("http://google.hr", http_event_handler);
     ESP_LOGI("connected", "connected");
     while (1)
         ;
