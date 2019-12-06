@@ -1,0 +1,5 @@
+
+build/
+ 
+#Ignore files built by Visual Studio/Visual Micro
+.vscode
