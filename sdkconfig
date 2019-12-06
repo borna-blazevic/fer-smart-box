@@ -115,8 +115,8 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # WiFi Connection Configuration
 #
-CONFIG_WIFI_SSID="IT HURTS WHEN IP"
-CONFIG_WIFI_PASSWORD="bobosmrade"
+CONFIG_WIFI_SSID="ssid"
+CONFIG_WIFI_PASSWORD="pass"
 # CONFIG_LIMIT_NUMBER_OF_RETRIES is not set
 CONFIG_MAXIMUM_RETRY=5
 # end of WiFi Connection Configuration
