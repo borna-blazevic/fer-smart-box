@@ -1,7 +1,7 @@
 # fer-smart-box
 Smart box project aims to create a technical solution that can transform an ordinary office cabinet into a "smart" cabinet, which allows inventory monitoring within it and gives access to inventory only to authorized users.
 
-# Getting started
+## Getting started
 
 This project requires the Espressif IoT Development Framework (ESP-IDF) set up and assumes the user already read the [ESP-IDF getting started guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) and set up the framework accordingly.
 
@@ -19,7 +19,7 @@ Next run:
 
 And the project should be flashed to the board.
 
-# Deveeloping on the project
+## Developing on the project
 
 To start working on the project after cloning create a new branch like this:
  ```
@@ -27,7 +27,7 @@ To start working on the project after cloning create a new branch like this:
  ```
 
 
-# Usefull reading materials
+## Useful reading materials
 * [Kconfig](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html#kconfig-formatting-rules)
 
 * [Networking](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/index.html)
