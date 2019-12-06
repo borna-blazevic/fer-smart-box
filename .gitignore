@@ -1,5 +1,6 @@
 
 build/
- 
+sdkconfig
+sdkconfig.old
 #Ignore files built by Visual Studio/Visual Micro
 .vscode
