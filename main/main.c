@@ -31,9 +31,8 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "protocol_examples_common.h"
 #include "esp_netif.h"
-
+#include "wifi.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
@@ -43,9 +42,9 @@
 #include "esp_tls.h"
 
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "https://f0f08ecc.ngrok.io"
+#define WEB_SERVER "https://377d1bb9.ngrok.io"
 #define WEB_PORT "443"
-#define WEB_URL "https://f0f08ecc.ngrok.io"
+#define WEB_URL "https://377d1bb9.ngrok.io"
 
 static const char *TAG = "ivan";
 
@@ -53,20 +52,6 @@ static const char *REQUEST = "GET " WEB_URL " HTTP/1.0\r\n"
     "Host: "WEB_SERVER"\r\n"
     "User-Agent: esp-idf/1.0 esp32\r\n"
     "\r\n";
-
-/* Root cert for howsmyssl.com, taken from server_root_cert.pem
-
-   The PEM file was extracted from the output of this command:
-   openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null
-
-   The CA root cert is the last cert given in the chain of certs.
-
-   To embed it in the app binary, the PEM file is named
-   in the component.mk COMPONENT_EMBED_TXTFILES variable.
-*/
-// extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
-// extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
-
 
 static void https_get_task(void *pvParameters)
 {
@@ -158,7 +143,8 @@ void app_main(void)
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    ESP_ERROR_CHECK(example_connect());
+    ESP_LOGI(TAG,"hehehehehhehehhehehehehehhehehehehehehehehehehehheehhehehehehe");
+    wifi_init_sta();
 
     xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);
 }
