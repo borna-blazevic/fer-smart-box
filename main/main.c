@@ -1,150 +1,96 @@
-/* HTTPS GET Example using plain mbedTLS sockets
- *
- * Contacts the howsmyssl.com API via TLS v1.2 and reads a JSON
- * response.
- *
- * Adapted from the ssl_client1 example in mbedtls.
- *
- * Original Copyright (C) 2006-2016, ARM Limited, All Rights Reserved, Apache 2.0 License.
- * Additions Copyright (C) Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
- *
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include "esp_netif.h"
 #include "wifi.h"
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
-
+#include "http.h"
+#include "tls.h"
+#include "esp_log.h"
+#include "esp_event.h"
+#include "nvs_flash.h"
 #include "esp_tls.h"
 
-/* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "https://377d1bb9.ngrok.io"
-#define WEB_PORT "443"
-#define WEB_URL "https://377d1bb9.ngrok.io"
+static const char *TAG = "HTTP_CLIENT";
 
-static const char *TAG = "ivan";
-
-static const char *REQUEST = "GET " WEB_URL " HTTP/1.0\r\n"
-    "Host: "WEB_SERVER"\r\n"
-    "User-Agent: esp-idf/1.0 esp32\r\n"
-    "\r\n";
-
-static void https_get_task(void *pvParameters)
+esp_err_t http_event_handler(esp_http_client_event_t *evt)
 {
-    char buf[512];
-    int ret, len;
-
-    while(1) {
-        esp_tls_cfg_t cfg = {
-            // .cacert_buf  = server_root_cert_pem_start,
-            // .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
-        };
-        
-        struct esp_tls *tls = esp_tls_conn_http_new(WEB_URL, &cfg);
-        
-        if(tls != NULL) {
-            ESP_LOGI(TAG, "Connection established...");
-        } else {
-            ESP_LOGE(TAG, "Connection failed...");
-            goto exit;
-        }
-        
-        size_t written_bytes = 0;
-        do {
-            ret = esp_tls_conn_write(tls, 
-                                     REQUEST + written_bytes, 
-                                     strlen(REQUEST) - written_bytes);
-            if (ret >= 0) {
-                ESP_LOGI(TAG, "%d bytes written", ret);
-                written_bytes += ret;
-            } else if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-                ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
-                goto exit;
-            }
-        } while(written_bytes < strlen(REQUEST));
-
-        ESP_LOGI(TAG, "Reading HTTP response...");
-
-        do
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+        ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
+        break;
+    case HTTP_EVENT_ON_CONNECTED:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
+        break;
+    case HTTP_EVENT_HEADER_SENT:
+        ESP_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
+        break;
+    case HTTP_EVENT_ON_HEADER:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+        break;
+    case HTTP_EVENT_ON_DATA:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+        // if (!esp_http_client_is_chunked_response(evt->client))
+        // {
+        //Write out data
+        printf("%.*s", evt->data_len, (char *)evt->data);
+        //}
+        break;
+    case HTTP_EVENT_ON_FINISH:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
+        break;
+    case HTTP_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+        int mbedtls_err = 0;
+        esp_err_t err = esp_tls_get_and_clear_last_error(evt->data, &mbedtls_err, NULL);
+        if (err != 0)
         {
-            len = sizeof(buf) - 1;
-            bzero(buf, sizeof(buf));
-            ret = esp_tls_conn_read(tls, (char *)buf, len);
-            
-            if(ret == ESP_TLS_ERR_SSL_WANT_WRITE  || ret == ESP_TLS_ERR_SSL_WANT_READ)
-                continue;
-            
-            if(ret < 0)
-           {
-                ESP_LOGE(TAG, "esp_tls_conn_read  returned -0x%x", -ret);
-                break;
-            }
-
-            if(ret == 0)
-            {
-                ESP_LOGI(TAG, "connection closed");
-                break;
-            }
-
-            len = ret;
-            ESP_LOGD(TAG, "%d bytes read", len);
-            /* Print response directly to stdout as it is read */
-            for(int i = 0; i < len; i++) {
-                putchar(buf[i]);
-            }
-        } while(1);
-
-    exit:
-        esp_tls_conn_delete(tls);    
-        putchar('\n'); // JSON output doesn't have a newline at end
-
-        static int request_count;
-        ESP_LOGI(TAG, "Completed %d requests", ++request_count);
-
-        for(int countdown = 10; countdown >= 0; countdown--) {
-            ESP_LOGI(TAG, "%d...", countdown);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
+            ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
-        ESP_LOGI(TAG, "Starting again!");
+        break;
     }
+    return ESP_OK;
+}
+esp_err_t tls_handler(void)
+{
+    ESP_LOGI(TAG, "Cabinet unlocked");
+    return 0;
 }
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
-    esp_netif_init();
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    esp_tls_t *read_conn;
+    esp_tls_t *write_conn;
+    int number;
+    char buffer[20];
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+    wifi_connect();
+    tls_read(tls_handler);
+    tls_init(&write_conn, 0);
 
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_LOGI(TAG,"hehehehehhehehhehehehehehhehehehehehehehehehehehheehhehehehehe");
-    wifi_init_sta();
+    while (1)
+    {
+        number = esp_random() % 150;
+        itoa(number, buffer, 10);
+        ret = tls_write(buffer, write_conn);
+        if (ret != 1)
+        {
+            tls_clear_conn(write_conn);
+            tls_init(&write_conn, 0);
+        }
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
 
-    xTaskCreate(&https_get_task, "https_get_task", 8192, NULL, 5, NULL);
+    //http_get_url("http://google.hr", http_event_handler);
+    ESP_LOGI("connected", "connected");
+    while (1)
+        ;
 }
