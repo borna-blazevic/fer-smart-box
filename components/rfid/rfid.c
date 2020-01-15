@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
@@ -24,14 +25,29 @@
  * - Pin assignment: see defines below
  */
 
+#define CORRECT "0F0194B9CAE9"
+
 #define ECHO_TEST_TXD  (GPIO_NUM_4)
 #define ECHO_TEST_RXD  (GPIO_NUM_5)
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 
-#define BUF_SIZE (1024)
+#define BUF_SIZE (256)
 
-static void read_rfid(void *arg)
+int process(uint8_t* buffer, uint8_t *output){
+  int i,j;
+  for(i=0;i<12;i++){
+    if(buffer[i] == '0' && buffer[i+1] == 'F' && buffer[i+2] == '0' && buffer[i+3] == '1' && buffer[i+4] == '9' && buffer[i+5] == '4' && i <= 10){
+      for(j=0;j<12;j++){
+        output[j] = buffer[i+j];
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static void read_rfid_task(void *arg)
 {
     /* Configure parameters of an UART driver,
      * communication pins and install the driver */
@@ -46,18 +62,34 @@ static void read_rfid(void *arg)
     uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
 
+    void (*handler)(void) = (void(*)(void))arg;
+
     // Configure a temporary buffer for the incoming data
     uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
+    uint8_t rfid[12];
+    int ret;
+
 
     while (1) {
         // Read data from the UART
         int len = uart_read_bytes(UART_NUM_1, data, BUF_SIZE, 20 / portTICK_RATE_MS);
+        ret = process(data, rfid);
+        if(ret){
+            ret = strcmp(CORRECT,(char *)rfid);
+
+            if(ret == 0){
+                handler();
+            }
+        }
+        memset(data,0,BUF_SIZE);
         // Write data back to the UART
-        uart_write_bytes(UART_NUM_1, (const char *) data, len);
+
     }
 }
 
-void app_main(void)
+void read_rfid(void (*handler)(void))
 {
-    xTaskCreate(read_rfid, "read_rfid", 1024, NULL, 10, NULL);
+    xTaskCreate(read_rfid_task, "read_rfid_task", 1024, handler, 10, NULL);
 }
+
+
