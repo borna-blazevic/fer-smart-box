@@ -2,7 +2,7 @@
 /*==============================================================================================================================================================================*/
 /*																							SmartBox Fer																		*/
 /*==============================================================================================================================================================================*/
-/*	This part was made Karlo Strbad and Ivan Vuger																																*/
+/*	This part was made by Karlo Strbad and Ivan Vuger																																*/
 /*==============================================================================================================================================================================*/
 /* This is project for collage on FER in Zagreb. Mentor is Izv. prof. dr. sc. Hrvoje Dzapo  and with his assisent's Ivan Pavić, mag.ing. and Zrinka Kovačić mag.ing. 			*/
 /* This is part for mesure weight with function for taking measure and function for making Tera on scale 																		*/
@@ -29,6 +29,7 @@
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
 #include <rom/ets_sys.h>
+#include <load_cell.h>
 
 /*==============================================================================================================================================================================*/
 /*																						Define part																				*/
@@ -140,7 +141,7 @@ spi_device_handle_t SPI3_init(void) {
 
 uint32_t Tera(spi_device_handle_t spi_handle){
 	uint8_t data[4] = {};
-	uint32_t nuliste = 0;	//variable for 
+	uint32_t nuliste = 0;	//variable for avrage number of scale when os without load
 	int i;
 	
 	spi_transaction_t t;
@@ -191,32 +192,18 @@ float read_spi(spi_device_handle_t spi_handle, uint32_t tera_spi){
 }
 
 /**==============================================================================================================================================================================*/
-/*																							Main part																			*/
+/*																							Master initialitation																*/
 /*==============================================================================================================================================================================*/
 
 
-//Main application
-void app_main()
+void init_spi(uint32_t *tera_spi2, uint32_t *tera_spi3){
 {
 	spi_device_handle_t spi2_handle;
 	spi_device_handle_t spi3_handle;
-	uint32_t tera_spi2, tera_spi3;
 	
 	spi2_handle = SPI2_init();
 	spi3_handle = SPI3_init();
-	
-	ets_delay_us(1000*2000);			
-	tera_spi2 = Tera(spi2_handle);  //calling function Tera for making to start from zero
-	tera_spi3 = Tera(spi3_handle);	
-
-
-    while(1) {
-        printf("\nReceived_2: %.1f\n", read_spi(spi2_handle, tera_spi2)); 
-		printf("Received_3: %.1f\n", read_spi(spi3_handle, tera_spi3));
-		ets_delay_us(1000*1000);
-    }
-
-    //Never reached.
-    /* ret = spi_bus_remove_device(spi_handle);
-    assert(ret == ESP_OK); */
+				
+	*tera_spi2 = Tera(spi2_handle);  //calling function Tera for making to start from zero
+	*tera_spi3 = Tera(spi3_handle);	
 }
