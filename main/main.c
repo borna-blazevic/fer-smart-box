@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <sys/stat.h>
-#include "file.h"
 #include "main.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
