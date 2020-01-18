@@ -7,7 +7,6 @@
 #include "esp_netif.h"
 #include "esp_tls.h"
 #include "esp_http_client.h"
-
 #define MAX_HTTP_RECV_BUFFER 50000
 static const char *TAG = "HTTP_CLIENT";
 
