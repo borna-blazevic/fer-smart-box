@@ -62,8 +62,8 @@ void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
-    esp_tls_t *read_conn;
-    esp_tls_t *write_conn;
+    tls_read_arguments args;
+    esp_tls_t *conn;
     int number;
     char buffer[20];
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -73,19 +73,16 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
     wifi_connect();
-    tls_read(tls_handler);
-    tls_init(&write_conn, 0);
+    tls_init(&conn, 0);
+    args.handler = tls_handler;
+    args.tls = &conn;
+    tls_read(&args);
 
     while (1)
     {
         number = esp_random() % 150;
         itoa(number, buffer, 10);
-        ret = tls_write(buffer, write_conn);
-        if (ret != 1)
-        {
-            tls_clear_conn(write_conn);
-            tls_init(&write_conn, 0);
-        }
+        ret = tls_write(buffer, conn);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
