@@ -67,7 +67,7 @@ static void read_rfid_task(void *arg)
     uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
 
-    void (*handler)(void) = (void(*)(void))arg;
+    void (*handler)(char *rfid) = (void(*)(char *rfid))arg;
 
     // Configure a temporary buffer for the incoming data
     uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
@@ -80,13 +80,7 @@ static void read_rfid_task(void *arg)
         uart_read_bytes(UART_NUM_1, data, BUF_SIZE, 20 / portTICK_RATE_MS);
         ret = process(data, rfid);
         if(ret){
-
-            ESP_LOGI(TAG, "card %s",(char *)rfid);
-            ret = strcmp(CORRECT,(char *)rfid);
-
-            if(ret == 0){
-                handler();
-            }
+                handler((char *)rfid);
         }
         memset(data,0,BUF_SIZE);
         // Write data back to the UART
