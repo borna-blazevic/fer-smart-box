@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "rfid.h"
 #include "wifi.h"
 #include "http.h"
 #include "tls.h"
@@ -9,6 +10,12 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "esp_tls.h"
+#include "rfid.h"
+
+void rfid_handler()
+{
+    printf("Authorised!\n");
+}
 
 static const char *TAG = "HTTP_CLIENT";
 
@@ -77,6 +84,7 @@ void app_main(void)
     args.handler = tls_handler;
     args.tls = &conn;
     tls_read(&args);
+    read_rfid(rfid_handler);
 
     while (1)
     {
