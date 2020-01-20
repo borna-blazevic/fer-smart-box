@@ -11,7 +11,11 @@ To flash the project on the ESP32 board you need to configure it by executing th
  ```
     sudo idf.py menuconfig
  ```
-Add configure necessary options (no mandatory options for now).
+Add configure necessary options:
+
+* WiFi Connection Configuration  ---> WiFi SSID
+* WiFi Connection Configuration  ---> WiFi Password
+
 Next run:
  ```
   sudo idf.py -p <path to port> flash monitor
