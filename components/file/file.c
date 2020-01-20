@@ -1,14 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "esp_flash.h"
-#include "esp_flash_spi_init.h"
-#include "esp_partition.h"
-#include "esp_vfs.h"
-#include "esp_system.h"
-#include "esp_spiffs.h"
+#include <stdio.h>
+#include <string.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
+#include "esp_err.h"
 #include "esp_log.h"
-
+#include "esp_spiffs.h"
 
 #define CHAR_SIZE 1
 #define TAG_LENGTH 12
@@ -21,7 +20,7 @@ void filesystem_init(){
       .base_path = "/spiffs",
       .partition_label = NULL,
       .max_files = 5,
-      .format_if_mount_failed = false
+      .format_if_mount_failed = true
     };
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
     if (ret != ESP_OK) {
