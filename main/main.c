@@ -11,6 +11,7 @@
 #include "nvs_flash.h"
 #include "esp_tls.h"
 #include "rfid.h"
+#include "file.h"
 
 void rfid_handler()
 {
@@ -79,6 +80,7 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    filesystem_init();
     wifi_connect();
     tls_init(&conn, 0);
     args.handler = tls_handler;
