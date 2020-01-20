@@ -1,1 +1,1 @@
-void read_rfid(void (*handler)(void));
+void read_rfid(void (*handler)(char *rfid));
