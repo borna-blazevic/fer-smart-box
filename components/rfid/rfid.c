@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "esp_log.h"
 
 /**
  * This is an example which echos any data it receives on UART1 back to the sender,
@@ -32,6 +33,10 @@
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 
+
+//T1 0F0194B7537E
+//T2 0F01949BF0F1
+static const char *TAG = "RFID";
 #define BUF_SIZE (256)
 
 int process(uint8_t* buffer, uint8_t *output){
@@ -72,9 +77,11 @@ static void read_rfid_task(void *arg)
 
     while (1) {
         // Read data from the UART
-        int len = uart_read_bytes(UART_NUM_1, data, BUF_SIZE, 20 / portTICK_RATE_MS);
+        uart_read_bytes(UART_NUM_1, data, BUF_SIZE, 20 / portTICK_RATE_MS);
         ret = process(data, rfid);
         if(ret){
+
+            ESP_LOGI(TAG, "card %s",(char *)rfid);
             ret = strcmp(CORRECT,(char *)rfid);
 
             if(ret == 0){
@@ -89,7 +96,7 @@ static void read_rfid_task(void *arg)
 
 void read_rfid(void (*handler)(void))
 {
-    xTaskCreate(read_rfid_task, "read_rfid_task", 1024, handler, 10, NULL);
+    xTaskCreate(read_rfid_task, "read_rfid_task", 8192, handler, 10, NULL);
 }
 
 
