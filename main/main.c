@@ -9,6 +9,7 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "esp_tls.h"
+#include "json.c"
 
 static const char *TAG = "HTTP_CLIENT";
 
@@ -65,7 +66,8 @@ void app_main(void)
     tls_read_arguments args;
     esp_tls_t *conn;
     int number;
-    char buffer[20];
+    char *json_message;
+    message_template message;
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -81,8 +83,14 @@ void app_main(void)
     while (1)
     {
         number = esp_random() % 150;
-        itoa(number, buffer, 10);
-        ret = tls_write(buffer, conn);
+        itoa(number,
+             message.data[0], 10);
+
+        message.type = NEW;
+
+        cToJSON(message, &json_message);
+
+        ret = tls_write(json_message, conn);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
