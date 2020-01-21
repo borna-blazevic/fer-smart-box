@@ -36,3 +36,38 @@ To start working on the project after cloning create a new branch like this:
 * [Kconfig](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html#kconfig-formatting-rules)
 
 * [Networking](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/index.html)
+
+## GPIO pins in use
+
+ * Uart 0
+ ```
+  GPIO_1 TX
+  GPIO_3 RX
+  ```
+  
+ * SPI 2
+ ```
+  GPIO_12 MISO
+  GPIO_14 SCK
+  ```
+  
+ * SPI 3
+ ```
+  GPIO_18 SCK
+  GPIO_19 MISO
+  ```
+  
+ * Brava
+ ```
+  GPIO_26 output
+  ```
+  
+ * LED
+ ```
+  GPIO_32 input
+  ```
+  
+ * SWITCH
+  ```
+  GPIO_33 input
+  ```
