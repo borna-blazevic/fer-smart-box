@@ -29,13 +29,25 @@ static const char *TAG = "MAIN";
 #define ESP_INTR_FLAG_DEFAULT 0
 
 
+esp_tls_t *conn;
+
+uint32_t *tera_spi2, *tera_spi3;
+spi_device_handle_t *spi2_handle, *spi3_handle;
+
+char last_user[12];
+
+
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
+    float mass1,mass2;
     uint32_t gpio_num = (uint32_t) arg;
+
+    mass3=read_spi(*spi3_handle,*tera_spi3);
+    mass2=read_spi(*spi2_handle,*tera_spi2);
+
+    
 }
 
-
-esp_tls_t *conn;
 void rfid_handler(char *rfid)
 {
     int ret = 0;
@@ -48,6 +60,7 @@ void rfid_handler(char *rfid)
         strcpy(message.data[0], rfid);
         cToJSON(message, &json_message);
         ret = tls_write(json_message, conn);
+        strcpy(last_user, rfid);
     }
     else
     {
@@ -212,6 +225,7 @@ void app_main(void)
     tls_heartbeat(&conn);
     tls_read(&args);
     read_rfid(rfid_handler);
+    init_spi(tera_spi2,tera_spi3, spi2_handle, spi3_handle);
 
     while (1)
     {
