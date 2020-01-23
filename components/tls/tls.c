@@ -91,7 +91,7 @@ loop:
 
 static void tls_read_task(void *pvParameters)
 {
-    char buf[512];
+    char buf[3072];
     int ret, len;
 
     tls_read_arguments *args = (tls_read_arguments *)pvParameters;
@@ -163,7 +163,7 @@ void tls_read(tls_read_arguments *arguments)
 }
 void tls_heartbeat(esp_tls_t **tls)
 {
-    xTaskCreate(tls_heartbeat_task, "tls_heartbeat_task", 8192, tls, 5, NULL);
+    xTaskCreate(tls_heartbeat_task, "tls_heartbeat_task", 10240, tls, 5, NULL);
 }
 void tls_clear_conn(esp_tls_t *tls)
 {

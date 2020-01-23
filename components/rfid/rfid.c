@@ -90,7 +90,7 @@ static void read_rfid_task(void *arg)
 
 void read_rfid(void (*handler)(void))
 {
-    xTaskCreate(read_rfid_task, "read_rfid_task", 8192, handler, 10, NULL);
+    xTaskCreate(read_rfid_task, "read_rfid_task", 8192, handler, 2, NULL);
 }
 
 
