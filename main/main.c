@@ -14,7 +14,26 @@
 #include "rfid.h"
 #include "file.h"
 #include "json.c"
+#include "driver/gpio.h"
 static const char *TAG = "MAIN";
+
+
+#define GPIO_OUTPUT_IO    15
+#define GPIO_OUTPUT_PIN_SEL  (1ULL<<GPIO_OUTPUT_IO)
+
+
+#define GPIO_INPUT_IO     16
+#define GPIO_INPUT_PIN_SEL  (1ULL<<GPIO_INPUT_IO) 
+
+
+#define ESP_INTR_FLAG_DEFAULT 0
+
+
+static void IRAM_ATTR gpio_isr_handler(void* arg)
+{
+    uint32_t gpio_num = (uint32_t) arg;
+}
+
 
 esp_tls_t *conn;
 void rfid_handler(char *rfid)
@@ -33,7 +52,47 @@ void rfid_handler(char *rfid)
     else
     {
         ESP_LOGI(TAG, "Unlocked");
+
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        vTaskDelay(3000 / portTICK_RATE_MS);
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
     }
+}
+
+void init_gpio_output()
+{
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+}
+void init_gpio_input()
+{
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
+    gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_handler, (void*) GPIO_INPUT_IO);
 }
 
 esp_err_t tls_handler(char *message)
@@ -111,12 +170,12 @@ esp_err_t tls_handler(char *message)
                 ESP_LOGI(TAG, "arg 1 %s", arg1->valuestring);
                 arg2 = cJSON_GetObjectItemCaseSensitive(message_json, "length");
                 if (cJSON_IsNumber(arg2))
-                    {
-                        ESP_LOGI(TAG, "arg 2 %d", arg2->valueint);
-                        ESP_LOGI(TAG, "REPLACE_FILE command");
-                        ESP_LOGI(TAG, "REPLACE_FILE %s %d", arg1->valuestring, arg2->valueint);
-                        replaceFile(arg1->valuestring, arg2->valueint);
-                    }
+                {
+                    ESP_LOGI(TAG, "arg 2 %d", arg2->valueint);
+                    ESP_LOGI(TAG, "REPLACE_FILE command");
+                    ESP_LOGI(TAG, "REPLACE_FILE %s %d", arg1->valuestring, arg2->valueint);
+                    replaceFile(arg1->valuestring, arg2->valueint);
+                }
                 // fileDelete((uint8_t *)arg2->valuestring);
                 // fileWrite((uint8_t *)arg1->valuestring, 0, SEEK_END);
             }
@@ -157,9 +216,4 @@ void app_main(void)
     while (1)
     {
     }
-
-    //http_get_url("http://google.hr", http_event_handler);
-    ESP_LOGI("connected", "connected");
-    while (1)
-        ;
 }
