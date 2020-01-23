@@ -18,7 +18,6 @@ extern const uint8_t server_root_cert_pem_end[] asm("_binary_public_cert_pem_end
 
 SemaphoreHandle_t xSemaphore = NULL;
 
-
 int tls_init(esp_tls_t **tls, int limit_reconnext)
 {
     int ret = 0, i = 0;
@@ -55,22 +54,47 @@ int tls_init(esp_tls_t **tls, int limit_reconnext)
     return ret;
 }
 
+static void tls_heartbeat_task(void *pvParameters)
+{
+    int ret = 0;
+    char message = '1';
+    esp_tls_t **tls = (esp_tls_t **)pvParameters;
+
+// See if we can obtain the semaphore.  If the semaphore is not available
+// wait 10 ticks to see if it becomes free.
+loop:
+    do
+    {
+
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        if (xSemaphore != NULL)
+        {
+            if (xSemaphoreTake(xSemaphore, (TickType_t)10) == pdTRUE)
+            {
+                ret = esp_tls_conn_write(*tls,
+                                         &message,
+                                         1);
+                xSemaphoreGive(xSemaphore);
+            }
+            else
+            {
+                ret = -1;
+                goto loop;
+            }
+        }
+        if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE && ret <= 0)
+        {
+            ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
+        }
+    } while (1);
+}
+
 static void tls_read_task(void *pvParameters)
 {
     char buf[512];
     int ret, len;
 
-    // esp_err_t (*handler)(void);
-    //esp_tls_t **conn;
-    // handler = (esp_err_t(*)(void))pvParameters;
-
     tls_read_arguments *args = (tls_read_arguments *)pvParameters;
-
-    // ret = tls_init(&tls, 0);
-
-    // if (ret != 1)
-    //     goto exit;
-
 loop:
     len = sizeof(buf) - 1;
     bzero(buf, sizeof(buf));
@@ -93,19 +117,10 @@ loop:
 
     len = ret;
     ESP_LOGE(TAG, "%d bytes read", len);
-    /* Print response directly to stdout as it is read */
-
-    ret = strcmp(UNLOCK_MESSAGE, buf);
-    if (ret == 0)
-    {   
-        args->handler();
-    }
-
-    ESP_LOGE(TAG, "read goto loop");
+    args->handler(buf);
     goto loop;
 
 restart:
-    ESP_LOGE(TAG, "read restart");
     if (xSemaphore != NULL)
     {
         if (xSemaphoreTake(xSemaphore, (TickType_t)10) == pdTRUE)
@@ -114,12 +129,13 @@ restart:
             ret = tls_init(args->tls, 0);
             xSemaphoreGive(xSemaphore);
 
-            if (ret != 1){
+            if (ret != 1)
+            {
                 goto exit;
             }
-            else{
+            else
+            {
                 goto loop;
-
             }
         }
         else
@@ -127,14 +143,6 @@ restart:
             goto restart;
         }
     }
-    // esp_tls_conn_delete(tls);
-    // ret = tls_init(&tls, 0);
-
-    // if (ret != 1)
-    //     goto exit;
-    // else
-    //     goto loop;
-
 exit:
     if (xSemaphore != NULL)
     {
@@ -149,9 +157,13 @@ exit:
     ESP_LOGE(TAG, "failed to connect");
 }
 
-void tls_read( tls_read_arguments *arguments)
+void tls_read(tls_read_arguments *arguments)
 {
     xTaskCreate(tls_read_task, "tls_read_task", 8192, arguments, 5, NULL);
+}
+void tls_heartbeat(esp_tls_t **tls)
+{
+    xTaskCreate(tls_heartbeat_task, "tls_heartbeat_task", 8192, tls, 5, NULL);
 }
 void tls_clear_conn(esp_tls_t *tls)
 {
@@ -168,33 +180,33 @@ int tls_write(char *message, esp_tls_t *tls)
     {
         // See if we can obtain the semaphore.  If the semaphore is not available
         // wait 10 ticks to see if it becomes free.
-        
-            do
+
+        do
+        {
+            if (xSemaphoreTake(xSemaphore, (TickType_t)10) == pdTRUE)
             {
-                if (xSemaphoreTake(xSemaphore, (TickType_t)10) == pdTRUE)
-                {
-                    ret = esp_tls_conn_write(tls,
-                                             message + written_bytes,
-                                             strlen(message) - written_bytes);
-                    xSemaphoreGive(xSemaphore);
-                }else
-                {
-                    ret = -1;
-                    goto error;
-                }
-                
-                if (ret >= 0)
-                {
-                    ESP_LOGI(TAG, "%d bytes written", ret);
-                    written_bytes += ret;
-                }
-                else if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE)
-                {
-                    ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
-                    goto error;
-                }
-            } while (written_bytes < strlen(message));
-        
+                ret = esp_tls_conn_write(tls,
+                                         message + written_bytes,
+                                         strlen(message) - written_bytes);
+                xSemaphoreGive(xSemaphore);
+            }
+            else
+            {
+                ret = -1;
+                goto error;
+            }
+
+            if (ret >= 0)
+            {
+                ESP_LOGI(TAG, "%d bytes written", ret);
+                written_bytes += ret;
+            }
+            else if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE)
+            {
+                ESP_LOGE(TAG, "esp_tls_conn_write  returned 0x%x", ret);
+                goto error;
+            }
+        } while (written_bytes < strlen(message));
     }
 
     return 1;

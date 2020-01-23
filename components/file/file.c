@@ -41,6 +41,7 @@ void filesystem_init(){
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
     ESP_LOGI(TAG, "SPIFFS initialized");
+    remove("/spiffs/RFIDtags.txt");
    
     
    
@@ -54,7 +55,7 @@ int fileWrite(uint8_t* buffer,long int offset,int seekMode){
         return 0;
     }
     fseek(f,offset,seekMode);
-    fwrite(buffer,CHAR_SIZE,TAG_LENGTH,f);
+    fwrite(buffer,CHAR_SIZE,TAG_LENGTH+1,f);
     fclose(f);
     //ESP_LOGI(TAG, "File written");
     return TAG_LENGTH;
@@ -66,6 +67,12 @@ int fileFind(uint8_t* buffer){
   long fsize;
   bool found = true;
   FILE *f = fopen("/spiffs/RFIDtags.txt", "r");
+  if(f== NULL)
+  {
+    ESP_LOGI(TAG, "file does not exist");
+    fclose(f);
+    return -1;
+  }
   fseek(f,0,SEEK_END);
   fsize = ftell(f);
   data =(uint8_t*)malloc(fsize);
@@ -122,4 +129,25 @@ void deleteRFIDfile(){
         unlink("/spiffs/RFIDtags.txt");
           ESP_LOGI(TAG, "Deleted RFIDtags.txt");
     }
+}
+
+void read_file(){
+  int j=0;
+  uint8_t *data;
+  long fsize;
+  bool found = true;
+  FILE *f = fopen("/spiffs/RFIDtags.txt", "r");
+  if(f== NULL)
+  {
+    ESP_LOGI(TAG, "file does not exist");
+    return;
+  }
+  fseek(f,0,SEEK_END);
+  fsize = ftell(f);
+  data =(uint8_t*)malloc(fsize);
+  fseek(f,0,SEEK_SET);
+  fgets((char*)data, fsize, f); 
+  ESP_LOGI(TAG, "file : %s", data);
+  return;
+  
 }

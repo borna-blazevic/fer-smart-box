@@ -13,7 +13,8 @@ enum command{
     REMOVE = 2,
     UPDATE = 3,
     NEW = 4,
-    DATA = 5
+    DATA = 5,
+    FILE = 6,
 };
 
 typedef struct{
