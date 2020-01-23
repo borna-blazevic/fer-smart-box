@@ -61,6 +61,22 @@ int fileWrite(uint8_t* buffer,long int offset,int seekMode){
     return TAG_LENGTH;
 }
 
+int replaceFile(char * buffer, int length){
+
+  remove("/spiffs/RFIDtags.txt");
+  int ret;
+  FILE *f = fopen("/spiffs/RFIDtags.txt", "a");
+  if (f == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for writing");
+        return 0;
+    }
+  fseek(f, 0, SEEK_SET);
+  ret = fwrite(buffer, CHAR_SIZE, length+1, f);
+  ESP_LOGE(TAG, "ret %d", ret);
+  fclose(f);
+  return ret;
+}
+
 int fileFind(uint8_t* buffer){
   int j=0;
   uint8_t *data;

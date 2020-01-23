@@ -103,11 +103,32 @@ esp_err_t tls_handler(char *message)
             read_file();
             break;
 
+        case 6:
+            ESP_LOGI(TAG, "REPLACE_FILE command");
+            arg1 = cJSON_GetObjectItemCaseSensitive(message_json, "file");
+            if (cJSON_IsString(arg1) && (arg1->valuestring != NULL))
+            {
+                ESP_LOGI(TAG, "arg 1 %s", arg1->valuestring);
+                arg2 = cJSON_GetObjectItemCaseSensitive(message_json, "length");
+                if (cJSON_IsNumber(arg2))
+                    {
+                        ESP_LOGI(TAG, "arg 2 %d", arg2->valueint);
+                        ESP_LOGI(TAG, "REPLACE_FILE command");
+                        ESP_LOGI(TAG, "REPLACE_FILE %s %d", arg1->valuestring, arg2->valueint);
+                        replaceFile(arg1->valuestring, arg2->valueint);
+                    }
+                // fileDelete((uint8_t *)arg2->valuestring);
+                // fileWrite((uint8_t *)arg1->valuestring, 0, SEEK_END);
+            }
+            read_file();
+            break;
+
         default:
             break;
         }
     }
 end:
+    cJSON_Delete(message_json);
     return 0;
 }
 

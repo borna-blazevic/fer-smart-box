@@ -14,7 +14,7 @@ enum command{
     UPDATE = 3,
     NEW = 4,
     DATA = 5,
-    FILE = 6,
+    REPLACE_FILE = 6,
 };
 
 typedef struct{
