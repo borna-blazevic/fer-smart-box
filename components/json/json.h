@@ -20,6 +20,7 @@ enum command{
 typedef struct{
     enum command type;
     char data[2][MAX_DATA_LENGTH];
+    float number_data;
 } message_template;
 
 int cToJSON(message_template message, char **char_json);

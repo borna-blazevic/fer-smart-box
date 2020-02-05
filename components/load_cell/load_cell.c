@@ -145,7 +145,18 @@ uint32_t Tera(spi_device_handle_t spi_handle)
 	t.length = 8 * 3;
 	t.flags = SPI_TRANS_USE_RXDATA;
 	t.rx_buffer = data;
+	uint32_t rx_data;
 	t.tx_buffer = NULL;
+
+	do
+	{
+		ret = spi_device_transmit(spi_handle, &t);
+		assert(ret == ESP_OK);
+
+		// cast to uint32
+		rx_data = 0x00000000 | ((uint32_t)t.rx_data[2]) | ((uint32_t)t.rx_data[1] << 8) | ((uint32_t)t.rx_data[0] << 16);
+
+	} while (rx_data>=1188400);
 
 	for (i = 0; i < 5; ++i)
 	{
@@ -153,7 +164,7 @@ uint32_t Tera(spi_device_handle_t spi_handle)
 		assert(ret == ESP_OK);
 
 		// cast to uint32
-		uint32_t rx_data = 0x00000000 | ((uint32_t)t.rx_data[2]) | ((uint32_t)t.rx_data[1] << 8) | ((uint32_t)t.rx_data[0] << 16);
+		rx_data = 0x00000000 | ((uint32_t)t.rx_data[2]) | ((uint32_t)t.rx_data[1] << 8) | ((uint32_t)t.rx_data[0] << 16);
 
 		ets_delay_us(1000 * 500);
 		nuliste += rx_data;
@@ -166,10 +177,10 @@ uint32_t Tera(spi_device_handle_t spi_handle)
 /* 																	Function for reading weight with conversion to kilogram														*/
 /*==============================================================================================================================================================================*/
 
-float read_spi(spi_device_handle_t spi_handle, uint32_t tera_spi)
+double read_spi(spi_device_handle_t spi_handle, uint32_t tera_spi)
 {
 	uint8_t data[4] = {};
-	float mass;
+	double mass;
 
 	spi_transaction_t t;
 	memset(&t, 0, sizeof(t));
@@ -198,6 +209,6 @@ void init_spi(uint32_t *tera_spi2, uint32_t *tera_spi3, spi_device_handle_t *spi
 	*spi2_handle = SPI2_init();
 	*spi3_handle = SPI3_init();
 
-	*tera_spi2 = Tera(spi2_handle); //calling function Tera for making to start from zero
-	*tera_spi3 = Tera(spi3_handle);
+	*tera_spi2 = Tera(*spi2_handle); //calling function Tera for making to start from zero
+	*tera_spi3 = Tera(*spi3_handle);
 }
