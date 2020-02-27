@@ -4,13 +4,25 @@ menu "WiFi Connection Configuration"
         string "WiFi SSID"
         default "IT HURTS WHEN IP"
         help
-            SSID (network name) for the example to connect to.
+            SSID (network name) for the system to connect to.
+    
+    config EAP_SECURITY_MODE
+        bool "EAP Security mode"
+        default "1"
+        help
+            Security mode of the AP, 1=EAP, 0=WPA
+
+    config WIFI_USERNAME
+        string "WiFi username"
+        default "username"
+        help
+            WiFi username (EAP) for the system to use.
 
     config WIFI_PASSWORD
-        string "WiFi Password"
+        string "WiFi password"
         default "bobosmrade"
         help
-            WiFi password (WPA or WPA2) for the example to use.
+            WiFi password (WPA or WPA2) for the system to use.
 
     config LIMIT_NUMBER_OF_RETRIES
         bool "Limit retry"

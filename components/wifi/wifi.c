@@ -4,6 +4,7 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "esp_wpa2.h"
 #include "esp_event.h"
 #include "esp_log.h"
 
@@ -19,7 +20,9 @@
 */
 #define WIFI_SSID CONFIG_WIFI_SSID
 #define WIFI_PASSWORD CONFIG_WIFI_PASSWORD
+#define WIFI_USERNAME CONFIG_WIFI_USERNAME
 #define MAXIMUM_RETRY CONFIG_MAXIMUM_RETRY
+#define EAP_SECURITY_MODE CONFIG_EAP_SECURITY_MODE
 
 #if defined(CONFIG_LIMIT_NUMBER_OF_RETRIES)
 
@@ -32,8 +35,6 @@
 #define LIMIT_NUMBER_OF_RETRIES false
 
 #endif // LIMIT_NUMBER_OF_RETRIES
-
-
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -99,14 +100,36 @@ void wifi_init_sta()
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWORD},
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    if (EAP_SECURITY_MODE)
+    {
+        wifi_config_t wifi_config = {
+            .sta = {
+                .ssid = WIFI_SSID
+            }};
+
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+        ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+
+        ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)WIFI_USERNAME, strlen(WIFI_USERNAME)) );
+        ESP_ERROR_CHECK(esp_wifi_sta_wpa2_ent_set_username((uint8_t *)WIFI_USERNAME, strlen(WIFI_USERNAME)));
+        ESP_ERROR_CHECK(esp_wifi_sta_wpa2_ent_set_password((uint8_t *)WIFI_PASSWORD, strlen(WIFI_PASSWORD)));
+
+        ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
+
+        ESP_ERROR_CHECK(esp_wifi_start());
+    }
+    else
+    {
+        wifi_config_t wifi_config = {
+            .sta = {
+                .ssid = WIFI_SSID,
+                .password = WIFI_PASSWORD},
+        };
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+        ESP_ERROR_CHECK(esp_wifi_start());
+    }
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     ESP_LOGI(TAG, "connect to ap SSID:%s password:%s",

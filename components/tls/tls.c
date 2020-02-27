@@ -9,7 +9,7 @@
 #include "tls.h"
 
 #define WEB_PORT 1337
-#define WEB_URL "192.168.43.134"
+#define WEB_URL "161.53.64.218"
 #define UNLOCK_MESSAGE "unlock"
 
 static const char *TAG = "TLS";
@@ -18,7 +18,7 @@ extern const uint8_t server_root_cert_pem_end[] asm("_binary_public_cert_pem_end
 
 SemaphoreHandle_t xSemaphore = NULL;
 
-int tls_init(esp_tls_t **tls, int limit_reconnext)
+int system_tls_init(esp_tls_t **tls, int limit_reconnext)
 {
     int ret = 0, i = 0;
     if (xSemaphore == NULL)
@@ -126,7 +126,7 @@ restart:
         if (xSemaphoreTake(xSemaphore, (TickType_t)10) == pdTRUE)
         {
             esp_tls_conn_delete(*(args->tls));
-            ret = tls_init(args->tls, 0);
+            ret = system_tls_init(args->tls, 0);
             xSemaphoreGive(xSemaphore);
 
             if (ret != 1)

@@ -202,7 +202,7 @@ void app_main(void)
     PIN_FUNC_SELECT(IO_MUX_GPIO15_REG, PIN_FUNC_GPIO);
     init_gpio_output();
     init_gpio_input();
-    tls_init(&conn, 0);
+    system_tls_init(&conn, 0);
     args.handler = tls_handler;
     args.tls = &conn;
     tls_heartbeat(&conn);
@@ -236,7 +236,7 @@ void app_main(void)
             cToJSON(message, &json_message);
             strcpy(message.data[1], "load_cell2");
             ret = tls_write(json_message, conn);
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(10000 / portTICK_RATE_MS);
         }
     }
 }

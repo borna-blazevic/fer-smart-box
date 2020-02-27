@@ -41,7 +41,6 @@ void filesystem_init(){
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
     ESP_LOGI(TAG, "SPIFFS initialized");
-    remove("/spiffs/RFIDtags.txt");
    
     
    
