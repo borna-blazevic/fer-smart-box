@@ -4,3 +4,4 @@ sdkconfig
 sdkconfig.old
 #Ignore files built by Visual Studio/Visual Micro
 .vscode
+components/tls/public_cert.pem
